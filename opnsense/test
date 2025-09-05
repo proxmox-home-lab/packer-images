@@ -1,0 +1,61 @@
+#!/bin/sh
+# setup-freebsd.sh
+# Habilita root por SSH, configura DHCP en la interfaz y activa qemu-guest-agent
+# Uso: ./setup-freebsd.sh [INTERFAZ]
+# Ejemplo: ./setup-freebsd.sh vtnet0
+
+set -euo pipefail
+
+IFACE="${1:-vtnet0}"
+
+echo "==> Interfaz objetivo: ${IFACE}"
+
+# echo "==> Asegurando que sshd arranca al boot…"
+# sysrc -q sshd_enable="YES"
+
+# echo "==> Habilitando login SSH de root…"
+# SSHD_CFG="/etc/ssh/sshd_config"
+# # Crea el fichero si no existe
+# [ -f "$SSHD_CFG" ] || touch "$SSHD_CFG"
+
+# # Reemplaza o añade PermitRootLogin yes
+# if grep -Eq '^[#\s]*PermitRootLogin\s+' "$SSHD_CFG"; then
+#   sed -i '' -E 's/^[#\s]*PermitRootLogin\s+.*/PermitRootLogin yes/' "$SSHD_CFG"
+# else
+#   printf '\nPermitRootLogin yes\n' >> "$SSHD_CFG"
+# fi
+
+# (Opcional) si deseas permitir password auth explícitamente, descomenta:
+# if grep -Eq '^[#\s]*PasswordAuthentication\s+' "$SSHD_CFG"; then
+#   sed -i '' -E 's/^[#\s]*PasswordAuthentication\s+.*/PasswordAuthentication yes/' "$SSHD_CFG"
+# else
+#   printf 'PasswordAuthentication yes\n' >> "$SSHD_CFG"
+# fi
+
+echo "==> Configurando ${IFACE} con DHCP…"
+# Elimina configuraciones previas estáticas si existieran
+sysrc -q -x "ifconfig_${IFACE}" >/dev/null 2>&1 || true
+# Establece DHCP
+sysrc -q "ifconfig_${IFACE}=DHCP"
+
+# Si había gateway estático, elimínalo (DHCP lo gestionará)
+sysrc -q -x defaultrouter >/dev/null 2>&1 || true
+
+echo "==> Reiniciando red…"
+service netif restart "${IFACE}" || true
+service routing restart || true
+
+echo "==> Instalando qemu-guest-agent…"
+env ASSUME_ALWAYS_YES=yes pkg bootstrap -f >/dev/null 2>&1 || true
+pkg update -f
+pkg install -y qemu-guest-agent
+
+echo "==> Activando qemu-guest-agent al arranque y arrancándolo ahora…"
+sysrc -q qemu_guest_agent_enable="YES"
+service qemu-guest-agent start || service qemu-guest-agent restart || true
+
+echo "==> Reiniciando sshd…"
+service sshd restart
+
+echo "==> Hecho."
+echo "Recuerda en Proxmox habilitar el Guest Agent en la VM:  qm set <vmid> --agent enabled=1"

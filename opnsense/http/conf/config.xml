@@ -1,0 +1,19 @@
+<opnsense>
+  <system>
+    <hostname>opnsense</hostname>
+    <domain>localdomain</domain>
+    <timezone>Europe/Madrid</timezone>
+  </system>
+  <interfaces>
+    <wan>
+      <if>vtnet0</if>
+      <ipaddr>dhcp</ipaddr>
+    </wan>
+    <lan>
+      <if>vtnet1</if>
+      <ipaddr>192.168.10.1</ipaddr>
+      <subnet>24</subnet>
+    </lan>
+  </interfaces>
+  <filter/>
+</opnsense>
