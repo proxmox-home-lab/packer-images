@@ -1,0 +1,11 @@
+# Packer
+.packer_cache/
+output-*/
+*.box
+
+# Sensitive variable files (use *.auto.pkrvars.hcl only for non-secret vars)
+*.secret.pkrvars.hcl
+
+# Vault
+.vault_config/
+*.env
