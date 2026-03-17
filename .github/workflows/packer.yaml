@@ -1,0 +1,23 @@
+name: Packer Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "templates/**"
+  workflow_dispatch:
+    inputs:
+      template:
+        description: "Template to build (vyos | haproxy). Leave empty to auto-detect."
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  build:
+    uses: proxmox-home-lab/github-actions/.github/workflows/tpl-packer.yaml@main
+    secrets: inherit
+    with:
+      template: ${{ inputs.template || '' }}
+      templates_dir: templates
